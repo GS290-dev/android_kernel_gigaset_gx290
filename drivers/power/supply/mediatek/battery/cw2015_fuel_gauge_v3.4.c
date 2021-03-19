@@ -211,8 +211,7 @@ int cw_update_config_info(struct cw_battery *cw_bat)
 
     cw_printk(1,"\n");
     cw_printk(1,"[FGADC] test config_info = 0x%x\n",config_info[0]);
-	printk(KERN_ERR"%s\n", __func__);
-
+    printk(KERN_ERR"%s\n", __func__);
     
     // make sure no in sleep mode
     ret = cw_read(cw_bat->client, REG_MODE, &reg_val);
@@ -227,32 +226,32 @@ int cw_update_config_info(struct cw_battery *cw_bat)
 
     // update new battery info
     for (i = 0; i < SIZE_BATINFO; i++) {
-		printk(KERN_ERR"%X\n", config_info[i]);
+        printk(KERN_ERR"%X\n", config_info[i]);
         ret = cw_write(cw_bat->client, REG_BATINFO + i, &config_info[i]);
-        if(ret < 0) 
-			return ret;
+        if(ret < 0)
+            return ret;
     }
 
     reg_val |= CONFIG_UPDATE_FLG;   // set UPDATE_FLAG
-    //reg_val &= 0x07;                // clear ATHD
-   // reg_val |= ATHD;                // set ATHD
+    // reg_val &= 0x07;                // clear ATHD
+    // reg_val |= ATHD;                // set ATHD
     ret = cw_write(cw_bat->client, REG_CONFIG, &reg_val);
-    if(ret < 0) 
-		return ret;
+    if(ret < 0)
+        return ret;
+
     // read back and check
     ret = cw_read(cw_bat->client, REG_CONFIG, &reg_val);
-    if(ret < 0) {
+    if(ret < 0)
         return ret;
-    }
 
     if (!(reg_val & CONFIG_UPDATE_FLG)) {
-		printk("Error: The new config set fail\n");
-		//return -1;
+        printk("Error: The new config set fail\n");
+        //return -1;
     }
 
     if ((reg_val & 0xf8) != ATHD) {
-		printk("Error: The new ATHD set fail\n");
-		//return -1;
+        printk("Error: The new ATHD set fail\n");
+        //return -1;
     }
 
     // reset
@@ -265,28 +264,29 @@ int cw_update_config_info(struct cw_battery *cw_bat)
     
     ret = cw_write(cw_bat->client, REG_MODE, &reset_val);
     if(ret < 0) return ret;
-	
-	cw_printk(1,"cw2015 update config success!\n");
-	
+    
+    cw_printk(1,"cw2015 update config success!\n");
+    
     return 0;
 }
+
 /*CW2015 init function, Often called during initialization*/
 static int cw_init(struct cw_battery *cw_bat)
 {
     int ret;
     int i;
     unsigned char reg_val = MODE_SLEEP;
-	
+    
     if ((reg_val & MODE_SLEEP_MASK) == MODE_SLEEP) {
         reg_val = MODE_NORMAL;
         ret = cw_write(cw_bat->client, REG_MODE, &reg_val);
-        if (ret < 0) 
+        if (ret < 0)
             return ret;
     }
 
     ret = cw_read(cw_bat->client, REG_CONFIG, &reg_val);
     if (ret < 0)
-    	return ret;
+        return ret;
 #if 0
     if ((reg_val & 0xf8) != ATHD) {
         reg_val &= 0x07;    /* clear ATHD */
@@ -295,55 +295,55 @@ static int cw_init(struct cw_battery *cw_bat)
         if (ret < 0)
             return ret;
     }
-#endif 
+#endif
     ret = cw_read(cw_bat->client, REG_CONFIG, &reg_val);
-    if (ret < 0) 
+    if (ret < 0)
         return ret;
 
     if (!(reg_val & CONFIG_UPDATE_FLG)) {
-		cw_printk(1,"update config flg is true, need update config\n");
+        cw_printk(1,"update config flg is true, need update config\n");
         ret = cw_update_config_info(cw_bat);
         if (ret < 0) {
-			printk("%s : update config fail\n", __func__);
+            printk("%s : update config fail\n", __func__);
             return ret;
         }
     } else {
-    	for(i = 0; i < SIZE_BATINFO; i++) { 
-	        ret = cw_read(cw_bat->client, (REG_BATINFO + i), &reg_val);
-	        if (ret < 0)
-	        	return ret;
-	        
-			cw_printk(1,"cw2015 register [%d]%X\n",i,reg_val);
-	        if (config_info[i] != reg_val)
-	            break;
+        for(i = 0; i < SIZE_BATINFO; i++) {
+            ret = cw_read(cw_bat->client, (REG_BATINFO + i), &reg_val);
+            if (ret < 0)
+                return ret;
+
+            cw_printk(1,"cw2015 register [%d]%X\n",i,reg_val);
+            if (config_info[i] != reg_val)
+                break;
         }
         if (i != SIZE_BATINFO) {
-			cw_printk(1,"config didn't match, need update config\n");
-        	ret = cw_update_config_info(cw_bat);
+            cw_printk(1,"config didn't match, need update config\n");
+            ret = cw_update_config_info(cw_bat);
             if (ret < 0){
                 return ret;
             }
         }
     }
-	
-	msleep(10);
+
+    msleep(10);
     for (i = 0; i < 30; i++) {
         ret = cw_read(cw_bat->client, REG_SOC, &reg_val);
         if (ret < 0)
             return ret;
-        else if (reg_val <= 0x64) 
+        else if (reg_val <= 0x64)
             break;
         msleep(120);
     }
-	
+    
     if (i >= 30 ){
-    	 reg_val = MODE_SLEEP;
+         reg_val = MODE_SLEEP;
          ret = cw_write(cw_bat->client, REG_MODE, &reg_val);
          cw_printk(1,"cw2015 input unvalid power error, cw2015 join sleep mode\n");
          return -1;
-    } 
+    }
 
-	cw_printk(1,"cw2015 init success!\n");	
+    cw_printk(1,"cw2015 init success!\n");
     return 0;
 }
 
