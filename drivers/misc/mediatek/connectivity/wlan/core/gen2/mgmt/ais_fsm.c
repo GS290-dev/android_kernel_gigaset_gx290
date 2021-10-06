@@ -193,7 +193,7 @@ VOID aisInitializeConnectionSettings(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T p
 	prConnSettings->eDesiredPhyConfig = PHY_CONFIG_802_11ABGN;
 
 	/* Set default bandwidth modes */
-	prConnSettings->uc2G4BandwidthMode = CONFIG_BW_20M;
+	prConnSettings->uc2G4BandwidthMode = CONFIG_BW_20_40M;
 	prConnSettings->uc5GBandwidthMode = CONFIG_BW_20_40M;
 
 	prConnSettings->rRsnInfo.ucElemId = 0x30;
